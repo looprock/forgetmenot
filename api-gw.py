@@ -51,38 +51,43 @@ logging.debug(server)
 logging.debug(allowed)
 
 # this is just a test route to see what's getting posted
-@app.post('/todo', method='POST')
+@app.post('/todo', method=['GET', 'POST'])
 def postprint():
-    postdata = request.body.read()
-    # data = json.loads(postdata)
-    logging.debug(postdata)
-    params_dict = urlparse.parse_qsl(postdata)
-    postdate = time.strftime('%Y-%m-%dT%H:%M:%S%Z', time.localtime())
-    params = dict(params_dict)
-    ndict = {}
-    if params['From'] in allowed.keys():
-        dbname = "todo-%s" % (allowed[params['From']])
-        db = client[dbname]
-        todos = db.todos
-        ndict['author'] = allowed[params['From']]
-        ndict['created'] = postdate
-        ndict['content'] = params['Body']
-        ndict['status'] = 'new'
-        ndict['due'] = twoweeks
-        ndict['topics'] = []
-        ndict['links'] = []
-        ndict['level'] = '1'
-        ndict['priority'] = '1'
-        logging.debug(ndict)
-        try:
-            result = todos.insert_one(ndict)
-            logging.debug("inserting:")
+    if request.method == 'POST':
+        postdata = request.body.read()
+        # data = json.loads(postdata)
+        logging.debug(postdata)
+        params_dict = urlparse.parse_qsl(postdata)
+        postdate = time.strftime('%Y-%m-%dT%H:%M:%S%Z',time.localtime(time.time()))
+        twoweeks = time.strftime('%Y-%m-%dT%H:%M:%S%Z',time.localtime(time.time() + 1209600))
+        params = dict(params_dict)
+        ndict = {}
+        if params['From'] in allowed.keys():
+            dbname = "todo-%s" % (allowed[params['From']])
+            db = client[dbname]
+            todos = db.todos
+            ndict['author'] = allowed[params['From']]
+            ndict['created'] = postdate
+            ndict['content'] = params['Body']
+            ndict['status'] = 'new'
+            ndict['due'] = twoweeks
+            ndict['topics'] = []
+            ndict['links'] = []
+            ndict['level'] = '1'
+            ndict['priority'] = '1'
             logging.debug(ndict)
-        except:
-            logging.critical("Unable to post to %s" % server)
-        logging.info('One post: {0}'.format(result.inserted_id))
-    else:
-        logging.warning("Invalid number: %s" % params['From'])
+            try:
+                result = todos.insert_one(ndict)
+                logging.debug("inserting:")
+                logging.debug(ndict)
+            except:
+                logging.critical("Unable to post to %s" % server)
+            logging.info('One post: {0}'.format(result.inserted_id))
+            # logging.info("worked!")
+        else:
+            logging.warning("Invalid number: %s" % params['From'])
+    if request.method == 'GET':
+        return "hi"
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port='18080', server='tornado', reloader=False)
