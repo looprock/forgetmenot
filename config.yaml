@@ -1,0 +1,6 @@
+server: cluster.mongodb.net/namespace
+username: user
+password: passwd
+allowed:
+  '+15551234560': 'user1'
+  '+15551237895': 'user2'

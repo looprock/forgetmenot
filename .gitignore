@@ -99,3 +99,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+read.py
+test-config.yaml
+data.txt

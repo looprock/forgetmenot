@@ -1,0 +1,71 @@
+#!/Users/dland/virtualenv/boto/bin/python
+import logging
+import pymongo
+from pymongo import MongoClient
+import sys
+import os
+import time
+from bson import ObjectId
+
+postdate = time.strftime('%Y-%m-%dT%H:%M:%S%Z',time.localtime(time.time()))
+twoweeks = time.strftime('%Y-%m-%dT%H:%M:%S%Z',time.localtime(time.time() + 1209600))
+
+dbuser = os.environ.get('todo_user', None)
+dbpass = os.environ.get('todo_pass', None)
+dbhost = os.environ.get('todo_host', None)
+
+# set up app
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+server = "mongodb+srv://%s:%s@%s" % (dbuser, dbpass, dbhost)
+client = MongoClient(server)
+dbname = "todo-dland"
+db = client[dbname]
+todos = db.todos
+
+def additem(content):
+    ndict = {}
+    ndict['author'] = 'dland'
+    ndict['created'] = postdate
+    ndict['content'] = content
+    ndict['status'] = 'new'
+    ndict['due'] = twoweeks
+    ndict['topics'] = []
+    ndict['links'] = []
+    ndict['level'] = '1'
+    ndict['priority'] = '1'
+    result = todos.insert_one(ndict)
+    return 'item added: {0}'.format(result.inserted_id)
+
+def list():
+    items = todos.find()
+    return items
+
+def deleteid(id):
+    result = todos.remove(id)
+    return result
+
+if len(sys.argv) == 1:
+    sys.exit("No quarter asked and none taken.")
+
+if sys.argv[1] == "add":
+    if len(sys.argv) == 3:
+        print(additem(sys.argv[2]))
+    else:
+        sys.exit("ERROR: incorrect number of args for add action")
+elif sys.argv[1] == 'list':
+    items = list()
+    print("| %-25s| %-23s| %-10s | %s" % ("ID", "Due        ", "Status", "Item"))
+    for item in items:
+        print "| %-15s | %-15s | %-10s | %s" % (item['_id'], item['due'], item['status'], item['content'])
+        # print(item['content'])
+# elif sys.argv[1] == 'delall':
+#     items = list()
+#     for item in items:
+#         print(deleteid(item['_id']))
+elif sys.argv[1] == 'delete':
+    if len(sys.argv) == 3:
+        print(deleteid(sys.argv[2]))
+    else:
+        sys.exit("ERROR: incorrect number of args for delete")
+else:
+    sys.exit("ERROR: invalid option %s" % sys.argv[1])
